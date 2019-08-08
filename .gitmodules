@@ -1,0 +1,3 @@
+[submodule "themes/phugo"]
+	path = themes/phugo
+	url = https://github.com/aerohub/phugo
