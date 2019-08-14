@@ -1,0 +1,10 @@
+{{ define "main" }}
+    <div id="main">
+       {{ with .Site.GetPage "/tag/latest" }}
+           {{ partial "thumb.html" . }}
+       {{ end }}
+       {{ range where (where .Site.Pages "Kind" "section").ByDate.Reverse  ".Title" "ne" "latest" }}
+           {{ partial "thumb.html" . }}
+        {{ end }}
+    </div>
+{{ end }}

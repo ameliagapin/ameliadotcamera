@@ -1,0 +1,18 @@
+<article class="thumb">
+	<a href="{{ .Get "full" }}" class="image"><img src="{{ .Get "thumb" }}" alt="{{ .Get "alt" }}" /></a>
+    <h2>{{ .Get "phototitle" }}</h2>
+	<p>
+        {{ if .Get "date" }}
+           {{ dateFormat "01/02/2006" (.Get "date") }}
+            <br/>
+        {{ end }}
+        {{ .Get "description" | markdownify }}
+    </p>
+    {{ if ( .Get "tags") }}
+        <p>
+        {{ range split ( .Get "tags") "," }}
+           <a class="tag"href="/tag/{{ . | urlize }}/"  alt="{{ . }}" />#{{ . }}</a>
+        {{ end }}
+        </p>
+    {{ end }}
+</article>
