@@ -17,7 +17,7 @@ title = "Amelia Gapin"
     [[params.header.links]]
     name = "About"
     url = "#footer"
-    icon = "fa-info-circle"    
+    icon = "fa-info-circle"
 
     # Footer panel
 
