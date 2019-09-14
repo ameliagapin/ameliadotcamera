@@ -17,8 +17,8 @@ skipped = 0
 
 def CreateShortcode(data):
     ret = "{{< photo"
-    ret += " full=\"/photos/%04d/%02d/%s\"" % (data["date"].year, data["date"].month, data["filename"])
-    ret += " thumb=\"/photos/%04d/%02d/%s\"" % (data["date"].year, data["date"].month, data["filename"])
+    ret += " full=\"/photos/%s\"" % (data["filename"])
+    ret += " thumb=\"/photos/%s\"" % (data["filename"])
     ret += " date=\"%s\"" % data["date"].strftime(DATE_FORMAT)
 
     if "title" in data:
