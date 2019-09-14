@@ -1,6 +1,4 @@
-import logging
-import datetime
-import os
+import os, sys, fnmatch, errno, logging, datetime
 import shutil
 from iptcinfo3 import IPTCInfo
 
@@ -12,14 +10,10 @@ CONTENT_DIRECTORY = "../content/tag/"
 ENCODING = "utf-8"
 DATE_FORMAT = "%Y-%m-%d"
 
-files = [
-    "../static/photos/2019/03/photo-6.jpg",
-    "../static/photos/2019/03/photo-5.jpg",
-    "../static/photos/2019/03/photo-4.jpg",
-    "../static/photos/2019/03/photo-3.jpg",
-    "../static/photos/2019/03/photo-2.jpg",
-    "../static/photos/2019/03/photo.jpg",
-]
+total = 0
+tags = 0
+success = 0
+skipped = 0
 
 def CreateShortcode(data):
     ret = "{{< photo"
@@ -67,14 +61,32 @@ def GetData(sfile):
     return data
 
 def ProcessPhotos(files):
+    global success, skipped
     photos = dict()
     photos[CHRONO_ALBUM] = []
 
     for sfile in files:
-        data = GetData(sfile)
+        try: 
+            data = GetData(sfile)
+        except:
+            skipped += 1
+            print("Failed to process file: " + sfile)
+            print(sys.exc_info())
+            continue
+        if not set(("date", "path", "filename")).issubset(data):
+            skipped += 1
+            print("Missing metadata for: " + sfile)
+            continue
+        # All photos get added to the chronological album
         photos[CHRONO_ALBUM].append(data)
+        success += 1
+
+    # We need this reverse chronological
     photos[CHRONO_ALBUM].sort(key=lambda x: x["date"], reverse=True)
 
+    # With all photos processed and in chrono album
+    # we can iterate through and add photos to each of their
+    # tags' albums
     for photo in photos[CHRONO_ALBUM]:
         for kw in photo["keywords"]:
             if not kw in photos:
@@ -87,16 +99,23 @@ def ConvertToSlug(keyword):
     slug = slug.lower()
     return slug
 
-def CreateFiles(photos):
+def CreatePosts(photos):
     try:
         shutil.rmtree(CONTENT_DIRECTORY)
         os.makedirs(CONTENT_DIRECTORY)
     except OSError:
         raise
 
+    global tags, success
+
+    # iterate over tags
     for key, value in photos.items():
+        if len(value) == 0:
+            continue
         slug = ConvertToSlug(key)
         path = "%s%s" % (CONTENT_DIRECTORY, slug)
+
+        print("Processing tag: % (%)", slug, len(value))
 
         if not os.path.exists(path):
             try:
@@ -105,6 +124,7 @@ def CreateFiles(photos):
                 if exc.errno != errno.EEXIST:
                     raise
 
+        # create index file for tag
         file = "%s/_index.md" % path
         f = open(file,"w+")
 
@@ -114,11 +134,34 @@ def CreateFiles(photos):
         f.write("date: %s\n" % value[0]["date"].strftime(DATE_FORMAT))
         f.write("---\n")
 
+        # iterate over photos for tag
         for photo in value:
             f.write("%s\n" % photo["shortcode"])
 
         f.close()
+        tags += 1
 
+if __name__=="__main__":
+    source = sys.argv[1]
 
-photos = ProcessPhotos(files)
-CreateFiles(photos)
+    photos  = []
+
+    # recursively loop through folders
+    for root, dirs, files in os.walk(source):
+       for file in files:
+           file = file.lower()
+           if fnmatch.fnmatch(file, '*.jpg'):
+               file = root + "/" + file
+               photos.append(file)
+               total += 1
+
+    p = ProcessPhotos(photos)
+    if len(p) == 0:
+        print("No photos to create posts for.")
+        sys.exit()
+    CreatePosts(p)
+
+    print("Total photos: ", total)
+    print("Total tags: ", tags)
+    print("Success photos: ", success)
+    print("Skipped photos: ", skipped)
