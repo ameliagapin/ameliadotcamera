@@ -1,7 +1,14 @@
 #!/usr/bin/env python
+#
+# This script will resize photos to 2048px on the long edge and move them to the provided
+# destination directory, while maintaing the filename.
+#
+# Usage: py resizeimages.py ~/Downloads/blogtest ../static/photos
+#
 
 from PIL import Image
-import os, sys, fnmatch
+import os, sys, fnmatch, traceback
+from iptcinfo3 import IPTCInfo
 
 LONG_EDGE=2048
 
@@ -16,6 +23,9 @@ def ResizeImage(dest, infile):
 
     try:
         org = Image.open(infile)
+        info = IPTCInfo(infile)
+        info.save_as(outfile)
+
         long = max(org.size[0], org.size[1])
 
         if (long > LONG_EDGE):
@@ -35,7 +45,8 @@ def ResizeImage(dest, infile):
         new.save(outfile)
         print("Wrote resized file to  " + outfile)
     except:
-        print("An error occured ",  sys.exc_info()[0])
+        print("An error occured ",  traceback.print_exc())
+        # sys.exc_info()[0])
 
 if __name__=="__main__":
     if len(sys.argv) != 3:

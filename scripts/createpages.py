@@ -1,3 +1,10 @@
+#
+# This script will read all jpg files in the provided directory and generate
+# tags and pages for them. Photos show live in the static/photos directory.
+#
+# Usage: python3 createpages.py ../static/photos
+#
+
 import os, sys, fnmatch, errno, logging, datetime
 import shutil
 from iptcinfo3 import IPTCInfo
@@ -19,7 +26,8 @@ def CreateShortcode(data):
     ret = "{{< photo"
     ret += " full=\"/photos/%s\"" % (data["filename"])
     ret += " thumb=\"/photos/%s\"" % (data["filename"])
-    ret += " date=\"%s\"" % data["date"].strftime(DATE_FORMAT)
+    if "date" in data:
+        ret += " date=\"%s\"" % data["date"].strftime(DATE_FORMAT)
 
     if "title" in data:
         ret += " phototitle=\"%s\"" % data["title"]
