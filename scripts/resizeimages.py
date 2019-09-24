@@ -8,7 +8,6 @@
 
 from PIL import Image
 import os, sys, fnmatch, traceback
-from iptcinfo3 import IPTCInfo
 
 LONG_EDGE=2048
 
@@ -23,9 +22,6 @@ def ResizeImage(dest, infile):
 
     try:
         org = Image.open(infile)
-        info = IPTCInfo(infile)
-        info.save_as(outfile)
-
         long = max(org.size[0], org.size[1])
 
         if (long > LONG_EDGE):
@@ -38,15 +34,18 @@ def ResizeImage(dest, infile):
                height = LONG_EDGE
                width = int(round((LONG_EDGE/float(org.size[1]))*org.size[0]))
 
-            new = org.resize((width, height), Image.ANTIALIAS)
-        else:
-            new = org
+            org = org.resize((width, height), Image.ANTIALIAS)
 
-        new.save(outfile)
+        org.save(outfile)
         print("Wrote resized file to  " + outfile)
     except:
         print("An error occured ",  traceback.print_exc())
         # sys.exc_info()[0])
+
+    try:
+        os.system("exiftool -TagsFromFile %s -all:all %s" % (infile, outfile))
+    except:
+        print("An error occured ",  traceback.print_exc())
 
 if __name__=="__main__":
     if len(sys.argv) != 3:

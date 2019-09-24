@@ -28,11 +28,11 @@ def CreateShortcode(data):
     ret += " thumb=\"/photos/%s\"" % (data["filename"])
     if "date" in data:
         ret += " date=\"%s\"" % data["date"].strftime(DATE_FORMAT)
-
     if "title" in data:
         ret += " phototitle=\"%s\"" % data["title"]
     if "description" in data:
-        ret += " description=\"%s\"" % data["description"]
+        desc = data["description"]
+        ret += " description=\"%s\"" % desc
     if "keywords" in data:
         ret += " tags=\"%s\"" % ",".join(data["keywords"])
 
@@ -52,7 +52,7 @@ def GetData(sfile):
 
     title = info["object name"] or info["headline"]
     if title:
-        data["title"] = title
+        data["title"] = title.decode(ENCODING)
     desc = info["caption/abstract"]
     if desc:
         data["description"] = desc.decode(ENCODING)
@@ -60,8 +60,8 @@ def GetData(sfile):
     if date:
         date_obj = datetime.datetime.strptime(date.decode(ENCODING), '%Y%m%d')
         data["date"] = date_obj
+    data["keywords"] = []
     if info["keywords"]:
-        data["keywords"] = []
         for key in info["keywords"]:
             data["keywords"].append(key.decode(ENCODING))
     data["shortcode"] = CreateShortcode(data)
@@ -123,7 +123,7 @@ def CreatePosts(photos):
         slug = ConvertToSlug(key)
         path = "%s%s" % (CONTENT_DIRECTORY, slug)
 
-        print("Processing tag: % (%)", slug, len(value))
+        print("Processing tag: %s (%s)" % (slug, len(value)))
 
         if not os.path.exists(path):
             try:
@@ -137,7 +137,8 @@ def CreatePosts(photos):
         f = open(file,"w+")
 
         f.write("---\n")
-        f.write("albumthumb: \"%s\"\n" % value[0]["path"])
+        thumb = "/photos/%s" % (value[0]["filename"])
+        f.write("albumthumb: \"%s\"\n" % thumb)
         f.write("title: \"%s\"\n" % key)
         f.write("date: %s\n" % value[0]["date"].strftime(DATE_FORMAT))
         f.write("---\n")
