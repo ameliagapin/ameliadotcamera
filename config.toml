@@ -23,7 +23,7 @@ title = "Amelia Gapin"
 
     [params.footer.paragraph]
     headline = "Amelia Gapin"
-    text = "Thanks for stopping by to check out my photos!"
+    text = "Amelia Gapin is a hobbyist photographer, marathon runner, and software engineer."
 
     [params.footer.social]
     headline = "Follow me"
@@ -42,6 +42,11 @@ title = "Amelia Gapin"
     label = "Github"
     url = "http://github.com/ameliagapin"
     icon = "fa-github"
+
+    [[params.footer.social.links]]
+    label = "Blog"
+    url = "http://amelia.run"
+    icon = "fa-link"
 
     # Contact form
 

@@ -7,6 +7,10 @@
             <br/>
         {{ end }}
         {{ .Get "description" | markdownify }}
+        {{ if .Get "camera" }}
+            <br>
+            {{ .Get "camera" | markdownify }}
+        {{ end }}
     </p>
     {{ if ( .Get "tags") }}
         <p>

@@ -5,7 +5,7 @@
 # Usage: python3 createpages.py ../static/photos
 #
 
-import os, sys, fnmatch, errno, logging, datetime
+import os, sys, fnmatch, errno, logging, datetime, random, exifread
 import shutil
 from iptcinfo3 import IPTCInfo
 
@@ -35,9 +35,28 @@ def CreateShortcode(data):
         ret += " description=\"%s\"" % desc
     if "keywords" in data:
         ret += " tags=\"%s\"" % ",".join(data["keywords"])
-
+    ret += " camera=\"%s\"" % FormatExif(data)
     ret += " >}}"
+
     return ret
+
+def FormatExif(data):
+    camera = ""
+    if "model" in data:
+        camera += data["model"]
+    else:
+        return""
+
+    if "focal" in data:
+        camera += " at " + data["focal"] + "mm"
+    if "aperture" in data:
+        camera += " f/" + data["aperture"]
+    if "shutter" in data:
+        camera += " " + data["shutter"] + "s"
+    if "iso" in data:
+        camera += " ISO " + data["iso"]
+
+    return camera
 
 def GetData(sfile):
     try:
@@ -64,9 +83,45 @@ def GetData(sfile):
     if info["keywords"]:
         for key in info["keywords"]:
             data["keywords"].append(key.decode(ENCODING))
+
+    # exif
+    exif = GetExif(sfile)
+    for tag in exif.keys():
+        value = str(exif[tag])
+        if tag == "Image Model":
+            data["model"] = value
+        if tag == "EXIF ExposureTime":
+            data["shutter"] = value
+        if tag == "EXIF FocalLength":
+            data["focal"] = value
+        if tag == "EXIF FNumber":
+            data["aperture"] = str(parse_fstop(value))
+        if tag == "EXIF ISOSpeedRatings":
+            data["iso"] = value
+        if tag == "EXIF LensModel":
+            data["lens"] = value
+
     data["shortcode"] = CreateShortcode(data)
 
     return data
+
+def GetExif(path):
+    f = open(path, 'rb')
+    exif = exifread.process_file(f, details=False)
+    return exif
+
+def parse_fstop(fraction):
+    try:
+        return float(fraction)
+    except ValueError:
+        num, denom = fraction.split('/')
+        try:
+            leading, num = num.split(' ')
+            whole = float(leading)
+        except ValueError:
+            whole = 0
+        frac = float(num) / float(denom)
+        return whole - frac if whole < 0 else whole + frac
 
 def ProcessPhotos(files):
     global success, skipped
@@ -137,10 +192,13 @@ def CreatePosts(photos):
         f = open(file,"w+")
 
         f.write("---\n")
-        thumb = "/photos/%s" % (value[0]["filename"])
+        thumb_index = 0
+        if key is not 'latest' and len(value)>1:
+            thumb_index = random.randrange(0, len(value)-1)
+        thumb = "/photos/%s" % (value[thumb_index]["filename"])
         f.write("albumthumb: \"%s\"\n" % thumb)
         f.write("title: \"%s\"\n" % key)
-        f.write("date: %s\n" % value[0]["date"].strftime(DATE_FORMAT))
+        f.write("date: %s\n" % value[thumb_index]["date"].strftime(DATE_FORMAT))
         f.write("---\n")
 
         # iterate over photos for tag
@@ -168,6 +226,7 @@ if __name__=="__main__":
     if len(p) == 0:
         print("No photos to create posts for.")
         sys.exit()
+
     CreatePosts(p)
 
     print("Total photos: ", total)
