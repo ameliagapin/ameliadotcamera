@@ -22,7 +22,7 @@ tags = 0
 success = 0
 skipped = 0
 
-def CreateShortcode(data):
+def get_shortcode(data):
     ret = "{{< photo"
     ret += " full=\"/photos/%s\"" % (data["filename"])
     ret += " thumb=\"/photos/%s\"" % (data["filename"])
@@ -35,12 +35,12 @@ def CreateShortcode(data):
         ret += " description=\"%s\"" % desc
     if "keywords" in data:
         ret += " tags=\"%s\"" % ",".join(data["keywords"])
-    ret += " camera=\"%s\"" % FormatExif(data)
+    ret += " camera=\"%s\"" % format_exif(data)
     ret += " >}}"
 
     return ret
 
-def FormatExif(data):
+def format_exif(data):
     camera = ""
     if "model" in data:
         camera += data["model"]
@@ -58,7 +58,7 @@ def FormatExif(data):
 
     return camera
 
-def GetData(sfile):
+def get_img_data(sfile):
     try:
         info = IPTCInfo(sfile)
     except:
@@ -85,7 +85,7 @@ def GetData(sfile):
             data["keywords"].append(key.decode(ENCODING))
 
     # exif
-    exif = GetExif(sfile)
+    exif = get_exif(sfile)
     for tag in exif.keys():
         value = str(exif[tag])
         if tag == "Image Model":
@@ -101,11 +101,11 @@ def GetData(sfile):
         if tag == "EXIF LensModel":
             data["lens"] = value
 
-    data["shortcode"] = CreateShortcode(data)
+    data["shortcode"] = get_shortcode(data)
 
     return data
 
-def GetExif(path):
+def get_exif(path):
     f = open(path, 'rb')
     exif = exifread.process_file(f, details=False)
     return exif
@@ -123,14 +123,14 @@ def parse_fstop(fraction):
         frac = float(num) / float(denom)
         return whole - frac if whole < 0 else whole + frac
 
-def ProcessPhotos(files):
+def process_photos(files):
     global success, skipped
     photos = dict()
     photos[CHRONO_ALBUM] = []
 
     for sfile in files:
         try: 
-            data = GetData(sfile)
+            data = get_img_data(sfile)
         except:
             skipped += 1
             print("Failed to process file: " + sfile)
@@ -157,12 +157,12 @@ def ProcessPhotos(files):
             photos[kw].append(photo)
     return photos
 
-def ConvertToSlug(keyword):
+def get_slug(keyword):
     slug = keyword.replace(" ", "-")
     slug = slug.lower()
     return slug
 
-def CreatePosts(photos):
+def create_posts(photos):
     try:
         shutil.rmtree(CONTENT_DIRECTORY)
         os.makedirs(CONTENT_DIRECTORY)
@@ -175,7 +175,7 @@ def CreatePosts(photos):
     for key, value in photos.items():
         if len(value) == 0:
             continue
-        slug = ConvertToSlug(key)
+        slug = get_slug(key)
         path = "%s%s" % (CONTENT_DIRECTORY, slug)
 
         print("Processing tag: %s (%s)" % (slug, len(value)))
@@ -222,12 +222,12 @@ if __name__=="__main__":
                photos.append(file)
                total += 1
 
-    p = ProcessPhotos(photos)
+    p = process_photos(photos)
     if len(p) == 0:
         print("No photos to create posts for.")
         sys.exit()
 
-    CreatePosts(p)
+    create_posts(p)
 
     print("Total photos: ", total)
     print("Total tags: ", tags)

@@ -11,7 +11,7 @@ import os, sys, fnmatch, traceback
 
 LONG_EDGE=2048
 
-def ResizeImage(dest, infile):
+def resize_image(dest, infile):
     print("Processing: ", infile)
 
     name = os.path.basename(infile)
@@ -69,4 +69,4 @@ if __name__=="__main__":
            file = file.lower()
            if fnmatch.fnmatch(file, '*.jpg'):
                file = root + "/" + file
-               ResizeImage(dest, file)
+               resize_image(dest, file)
